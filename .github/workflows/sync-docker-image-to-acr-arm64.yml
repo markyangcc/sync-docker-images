@@ -1,20 +1,21 @@
-name: Sync Docker Images to Aliyun ACR
+name: Sync Docker Images to Aliyun ACR (arm64)
 
 on:
   push:
     branches: [ "main" ]
     paths:
-      - 'images.txt'
+      - 'images_arm64.txt'
   workflow_dispatch:
     inputs:
       images:
-        description: 'Specify image, format: nginx:latest (empty to sync from images.txt)'
+        description: 'Specify image, format: nginx:latest (empty to sync from images_arm64.txt)'
         required: false
 
 env:
   ALIYUN_REGISTRY: registry.cn-beijing.aliyuncs.com
   ALIYUN_NAMESPACE: ${{ secrets.ALIYUN_NAMESPACE }}
-  TARGET_PLATFORM: linux/amd64
+  TARGET_PLATFORM: linux/arm64
+  IMAGES_FILE: images_arm64.txt  # Keep in sync with the filename in on.push.paths
 
 jobs:
   sync:
@@ -23,6 +24,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v4
+        with:
+          platforms: arm64
 
       - name: Login to Aliyun ACR
         uses: docker/login-action@v4
@@ -38,9 +44,9 @@ jobs:
           if [ -n "${{ github.event.inputs.images }}" ]; then
             IMAGES="${{ github.event.inputs.images }}"
           else
-            IMAGES=$(grep -v '^#' images.txt | grep -v '^$' || true)
+            IMAGES=$(grep -v '^#' "${{ env.IMAGES_FILE }}" | grep -v '^$' || true)
             if [ -z "$IMAGES" ]; then
-              echo "✅ No images to sync in images.txt, exit"
+              echo "✅ No images to sync in ${{ env.IMAGES_FILE }}, exit"
               exit 0
             fi
           fi
@@ -52,11 +58,11 @@ jobs:
             [ -z "$image" ] && continue
 
             IMAGE_NAME=$(echo "$image" | cut -d: -f1)
-            IMAGE_TAG=$(echo "$image" | grep -s ':' | cut -d: -f2)
+            IMAGE_TAG=$(echo "$image" | grep ':' | cut -d: -f2)
             IMAGE_TAG=${IMAGE_TAG:-latest}
 
             TARGET_NAME=$(echo "$IMAGE_NAME" | tr '/' '-')
-            TARGET="${{ env.ALIYUN_REGISTRY }}/${{ env.ALIYUN_NAMESPACE }}/${TARGET_NAME}:${IMAGE_TAG}"
+            TARGET="${{ env.ALIYUN_REGISTRY }}/${{ env.ALIYUN_NAMESPACE }}/${TARGET_NAME}:${IMAGE_TAG}-arm64"
 
             echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
             echo "📦 Pull: ${IMAGE_NAME}:${IMAGE_TAG} [${{ env.TARGET_PLATFORM }}]"

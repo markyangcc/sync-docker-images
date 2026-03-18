@@ -1,0 +1,84 @@
+name: Sync Docker Images to Aliyun ACR (amd64/x86_64)
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - 'images.txt'
+  workflow_dispatch:
+    inputs:
+      images:
+        description: 'Specify image, format: nginx:latest (empty to sync from images.txt)'
+        required: false
+
+env:
+  ALIYUN_REGISTRY: registry.cn-beijing.aliyuncs.com
+  ALIYUN_NAMESPACE: ${{ secrets.ALIYUN_NAMESPACE }}
+  TARGET_PLATFORM: linux/amd64
+  IMAGES_FILE: images.txt   # Keep in sync with the filename in on.push.paths
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    environment: ACR
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Login to Aliyun ACR
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.ALIYUN_REGISTRY }}
+          username: ${{ secrets.ALIYUN_USERNAME }}
+          password: ${{ secrets.ALIYUN_PASSWORD }}
+
+      - name: Sync images
+        run: |
+          set -e
+
+          if [ -n "${{ github.event.inputs.images }}" ]; then
+            IMAGES="${{ github.event.inputs.images }}"
+          else
+            IMAGES=$(grep -v '^#' "${{ env.IMAGES_FILE }}" | grep -v '^$' || true)
+            if [ -z "$IMAGES" ]; then
+              echo "✅ No images to sync in ${{ env.IMAGES_FILE }}, exit"
+              exit 0
+            fi
+          fi
+
+          SUCCESS=0
+          FAIL=0
+
+          while IFS= read -r image; do
+            [ -z "$image" ] && continue
+
+            IMAGE_NAME=$(echo "$image" | cut -d: -f1)
+            IMAGE_TAG=$(echo "$image" | grep ':' | cut -d: -f2)
+            IMAGE_TAG=${IMAGE_TAG:-latest}
+
+            TARGET_NAME=$(echo "$IMAGE_NAME" | tr '/' '-')
+            TARGET="${{ env.ALIYUN_REGISTRY }}/${{ env.ALIYUN_NAMESPACE }}/${TARGET_NAME}:${IMAGE_TAG}"
+
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo "📦 Pull: ${IMAGE_NAME}:${IMAGE_TAG} [${{ env.TARGET_PLATFORM }}]"
+            echo "🎯 Push: ${TARGET}"
+
+            if docker pull --platform ${{ env.TARGET_PLATFORM }} "${IMAGE_NAME}:${IMAGE_TAG}" && \
+               docker tag "${IMAGE_NAME}:${IMAGE_TAG}" "${TARGET}" && \
+               docker push "${TARGET}"; then
+              echo "✅ Success: ${image}"
+              SUCCESS=$((SUCCESS + 1))
+            else
+              echo "❌ Failed: ${image}"
+              FAIL=$((FAIL + 1))
+            fi
+
+            docker rmi "${IMAGE_NAME}:${IMAGE_TAG}" "${TARGET}" 2>/dev/null || true
+
+          done <<< "$IMAGES"
+
+          echo ""
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "✅ Success: ${SUCCESS}  ❌ Failed: ${FAIL}"
+
+          [ $FAIL -eq 0 ]

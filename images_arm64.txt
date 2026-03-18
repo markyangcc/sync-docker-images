@@ -1,0 +1,9 @@
+# Sync Docker Hub images to Aliyun ACR (arm64)
+# Format: <image>:<tag>
+# Lines starting with # and blank lines are automatically skipped
+# Note: '-arm64' suffix will be automatically appended to the image tag
+#
+# Examples:
+# nginx:latest      → pushed as nginx:latest-arm64
+# redis:7-alpine    → pushed as redis:7-alpine-arm64
+# postgres:16       → pushed as postgres:16-arm64
