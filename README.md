@@ -1,6 +1,6 @@
-# DockerHub 镜像同步到阿里云 ACR
+# 容器镜像同步到阿里云 ACR
 
-将 Docker Hub 镜像自动同步至阿里云容器镜像服务（ACR）
+支持从任意公共镜像仓库（Docker Hub、GHCR、NVCR 等）自动同步镜像到阿里云容器镜像服务（ACR）
 
 ## 使用方式
 
