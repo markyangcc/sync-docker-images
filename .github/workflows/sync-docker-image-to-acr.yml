@@ -3,6 +3,8 @@ name: Sync Docker Images to Aliyun ACR
 on:
   push:
     branches: [ "main" ]
+    paths:
+      - 'images.txt'
   workflow_dispatch:
     inputs:
       images:
