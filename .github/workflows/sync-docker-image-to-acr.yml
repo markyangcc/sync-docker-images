@@ -36,7 +36,7 @@ jobs:
           if [ -n "${{ github.event.inputs.images }}" ]; then
             IMAGES="${{ github.event.inputs.images }}"
           else
-            IMAGES=$(grep -v '^#' images.txt | grep -v '^$')
+            IMAGES=$(grep -v '^#' images.txt | grep -v '^$' || true)
             if [ -z "$IMAGES" ]; then
               echo "✅ No images to sync in images.txt, exit"
               exit 0
