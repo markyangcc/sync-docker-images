@@ -1,4 +1,4 @@
-name: Sync Docker Images to Aliyun ACR (arm64)
+name: Sync Docker Images to ACR (arm64)
 
 on:
   push:
