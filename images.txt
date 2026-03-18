@@ -1,4 +1,4 @@
-# Sync Docker Hub images to Aliyun ACR (amd64/x86_64)
+# Sync Docker images to Aliyun ACR (amd64/x86_64)
 # Format: <image>:<tag>
 # Lines starting with # and blank lines are automatically skipped
 #

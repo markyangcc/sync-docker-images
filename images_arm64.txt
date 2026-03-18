@@ -1,4 +1,4 @@
-# Sync Docker Hub images to Aliyun ACR (arm64)
+# Sync Docker images to Aliyun ACR (arm64)
 # Format: <image>:<tag>
 # Lines starting with # and blank lines are automatically skipped
 # Note: '-arm64' suffix will be automatically appended to the image tag

@@ -6,7 +6,7 @@
 
 ### 手动触发单个镜像
 
-- **amd64**：GitHub → Actions → `Sync Docker Images to Aliyun ACR (amd64/x86_64)` → Run workflow → 填入 `nginx:1.27`
+- **amd64/x86_64**：GitHub → Actions → `Sync Docker Images to Aliyun ACR (amd64/x86_64)` → Run workflow → 填入 `nginx:1.27`
 - **arm64**：GitHub → Actions → `Sync Docker Images to Aliyun ACR (ARM64)` → Run workflow → 填入 `nginx:1.27`
 
 ### 自动同步
