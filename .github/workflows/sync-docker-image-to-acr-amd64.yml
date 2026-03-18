@@ -54,9 +54,9 @@ jobs:
 
             IMAGE_NAME=$(echo "$image" | cut -d: -f1)
             IMAGE_TAG=$(echo "$image" | grep ':' | cut -d: -f2)
-            IMAGE_TAG=${IMAGE_TAG:-latest}
+            IMAGE_TAG=${IMAGE_TAG:-unknown}
 
-            TARGET_NAME=$(echo "$IMAGE_NAME" | tr '/' '-')
+            TARGET_NAME=$(echo "$IMAGE_NAME" | awk -F'/' '{print $NF}')
             TARGET="${{ env.ALIYUN_REGISTRY }}/${{ env.ALIYUN_NAMESPACE }}/${TARGET_NAME}:${IMAGE_TAG}"
 
             echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
