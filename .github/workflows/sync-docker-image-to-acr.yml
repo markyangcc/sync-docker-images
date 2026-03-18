@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       images:
-        description: '指定镜像，格式: nginx:latest(留空则同步 images.txt)'
+        description: 'Specify image, format: nginx:latest (empty to sync from images.txt)'
         required: false
 
 env:
@@ -38,7 +38,7 @@ jobs:
           else
             IMAGES=$(grep -v '^#' images.txt | grep -v '^$')
             if [ -z "$IMAGES" ]; then
-              echo "✅ images.txt 中没有需要同步镜像, exit"
+              echo "✅ No images to sync in images.txt, exit"
               exit 0
             fi
           fi
@@ -57,16 +57,16 @@ jobs:
             TARGET="${{ env.ALIYUN_REGISTRY }}/${{ env.ALIYUN_NAMESPACE }}/${TARGET_NAME}:${IMAGE_TAG}"
 
             echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-            echo "📦 拉取: ${IMAGE_NAME}:${IMAGE_TAG} [${{ env.TARGET_PLATFORM }}]"
-            echo "🎯 推送: ${TARGET}"
+            echo "📦 Pull: ${IMAGE_NAME}:${IMAGE_TAG} [${{ env.TARGET_PLATFORM }}]"
+            echo "🎯 Push: ${TARGET}"
 
             if docker pull --platform ${{ env.TARGET_PLATFORM }} "${IMAGE_NAME}:${IMAGE_TAG}" && \
                docker tag "${IMAGE_NAME}:${IMAGE_TAG}" "${TARGET}" && \
                docker push "${TARGET}"; then
-              echo "✅ 成功: ${image}"
+              echo "✅ Success: ${image}"
               SUCCESS=$((SUCCESS + 1))
             else
-              echo "❌ 失败: ${image}"
+              echo "❌ Failed: ${image}"
               FAIL=$((FAIL + 1))
             fi
 
@@ -76,6 +76,6 @@ jobs:
 
           echo ""
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "✅ 成功: ${SUCCESS} 个  ❌ 失败: ${FAIL} 个"
+          echo "✅ Success: ${SUCCESS}  ❌ Failed: ${FAIL}"
 
           [ $FAIL -eq 0 ]
