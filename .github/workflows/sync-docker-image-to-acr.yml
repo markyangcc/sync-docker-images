@@ -17,6 +17,7 @@ env:
 jobs:
   sync:
     runs-on: ubuntu-latest
+    environment: ACR
     steps:
       - name: Checkout
         uses: actions/checkout@v6
