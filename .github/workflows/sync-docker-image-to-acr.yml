@@ -37,6 +37,10 @@ jobs:
             IMAGES="${{ github.event.inputs.images }}"
           else
             IMAGES=$(grep -v '^#' images.txt | grep -v '^$')
+            if [ -z "$IMAGES" ]; then
+              echo "✅ images.txt 中没有需要同步镜像, exit"
+              exit 0
+            fi
           fi
 
           SUCCESS=0
