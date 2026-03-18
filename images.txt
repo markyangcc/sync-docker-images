@@ -1,0 +1,8 @@
+# Sync Docker Hub images to Aliyun ACR
+# Format: <image>:<tag>
+# Lines starting with # and blank lines are automatically skipped
+#
+# Examples:
+# nginx:latest
+# redis:7-alpine
+# postgres:16
