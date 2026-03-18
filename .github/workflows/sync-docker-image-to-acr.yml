@@ -1,0 +1,76 @@
+name: Sync Docker Images to Aliyun ACR
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+    inputs:
+      images:
+        description: '指定镜像，格式: nginx:latest(留空则同步 images.txt)'
+        required: false
+
+env:
+  ALIYUN_REGISTRY: registry.cn-beijing.aliyuncs.com
+  ALIYUN_NAMESPACE: ${{ secrets.ALIYUN_NAMESPACE }}
+  TARGET_PLATFORM: linux/amd64
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Login to Aliyun ACR
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.ALIYUN_REGISTRY }}
+          username: ${{ secrets.ALIYUN_USERNAME }}
+          password: ${{ secrets.ALIYUN_PASSWORD }}
+
+      - name: Sync images
+        run: |
+          set -e
+
+          if [ -n "${{ github.event.inputs.images }}" ]; then
+            IMAGES="${{ github.event.inputs.images }}"
+          else
+            IMAGES=$(grep -v '^#' images.txt | grep -v '^$')
+          fi
+
+          SUCCESS=0
+          FAIL=0
+
+          while IFS= read -r image; do
+            [ -z "$image" ] && continue
+
+            IMAGE_NAME=$(echo "$image" | cut -d: -f1)
+            IMAGE_TAG=$(echo "$image" | grep -s ':' | cut -d: -f2)
+            IMAGE_TAG=${IMAGE_TAG:-latest}
+
+            TARGET_NAME=$(echo "$IMAGE_NAME" | tr '/' '-')
+            TARGET="${{ env.ALIYUN_REGISTRY }}/${{ env.ALIYUN_NAMESPACE }}/${TARGET_NAME}:${IMAGE_TAG}"
+
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo "📦 拉取: ${IMAGE_NAME}:${IMAGE_TAG} [${{ env.TARGET_PLATFORM }}]"
+            echo "🎯 推送: ${TARGET}"
+
+            if docker pull --platform ${{ env.TARGET_PLATFORM }} "${IMAGE_NAME}:${IMAGE_TAG}" && \
+               docker tag "${IMAGE_NAME}:${IMAGE_TAG}" "${TARGET}" && \
+               docker push "${TARGET}"; then
+              echo "✅ 成功: ${image}"
+              SUCCESS=$((SUCCESS + 1))
+            else
+              echo "❌ 失败: ${image}"
+              FAIL=$((FAIL + 1))
+            fi
+
+            docker rmi "${IMAGE_NAME}:${IMAGE_TAG}" "${TARGET}" 2>/dev/null || true
+
+          done <<< "$IMAGES"
+
+          echo ""
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "✅ 成功: ${SUCCESS} 个  ❌ 失败: ${FAIL} 个"
+
+          [ $FAIL -eq 0 ]
